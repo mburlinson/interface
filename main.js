@@ -167,13 +167,18 @@ class Game {
 }
 
 // ============================================================================
-// Entry Point
+// Entry Point - Wait for THREE to be available
 // ============================================================================
 
-// Wait for DOM to be ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', startGame);
-} else {
+function waitForThreeAndStart() {
+    // Check if THREE is available
+    if (typeof THREE === 'undefined') {
+        console.log('Waiting for Three.js to load...');
+        setTimeout(waitForThreeAndStart, 50);
+        return;
+    }
+
+    console.log('Three.js loaded, starting game...');
     startGame();
 }
 
@@ -183,6 +188,13 @@ function startGame() {
     // Create and initialize game
     window.game = new Game();
     window.game.init();
+}
+
+// Wait for DOM to be ready, then wait for THREE
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', waitForThreeAndStart);
+} else {
+    waitForThreeAndStart();
 }
 
 // Handle page unload
