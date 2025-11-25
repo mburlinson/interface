@@ -167,34 +167,26 @@ class Game {
 }
 
 // ============================================================================
-// Entry Point - Wait for THREE to be available
+// Entry Point
 // ============================================================================
-
-function waitForThreeAndStart() {
-    // Check if THREE is available
-    if (typeof THREE === 'undefined') {
-        console.log('Waiting for Three.js to load...');
-        setTimeout(waitForThreeAndStart, 50);
-        return;
-    }
-
-    console.log('Three.js loaded, starting game...');
-    startGame();
-}
 
 function startGame() {
     console.log('Starting Urban 3D Environment...');
+    console.log('THREE available:', typeof THREE !== 'undefined');
+    console.log('Config available:', typeof Config !== 'undefined');
+    console.log('Utils available:', typeof Utils !== 'undefined');
 
     // Create and initialize game
     window.game = new Game();
     window.game.init();
 }
 
-// Wait for DOM to be ready, then wait for THREE
+// Wait for DOM to be ready
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', waitForThreeAndStart);
+    document.addEventListener('DOMContentLoaded', startGame);
 } else {
-    waitForThreeAndStart();
+    // DOM already loaded, start immediately
+    startGame();
 }
 
 // Handle page unload
