@@ -11,9 +11,9 @@ class Game {
         this.sceneManager = null;
         this.isRunning = false;
 
-        // UI elements
-        this.loadingScreen = document.getElementById('loading-screen');
-        this.canvas = document.getElementById('render-canvas');
+        // UI elements - will be set in init
+        this.loadingScreen = null;
+        this.canvas = null;
     }
 
     /**
@@ -23,6 +23,16 @@ class Game {
         console.log('Initializing Urban 3D Environment...');
 
         try {
+            // Find UI elements
+            this.loadingScreen = document.getElementById('loading-screen');
+            this.canvas = document.getElementById('render-canvas');
+
+            if (!this.canvas) {
+                throw new Error('Canvas element not found! Make sure #render-canvas exists in the HTML.');
+            }
+
+            console.log('Canvas found:', this.canvas);
+
             // Create Three.js core
             this.createRenderer();
             this.createScene();
@@ -131,21 +141,27 @@ class Game {
      * Hide loading screen
      */
     hideLoadingScreen() {
-        setTimeout(() => {
-            this.loadingScreen.classList.add('hidden');
-        }, 500);
+        if (this.loadingScreen) {
+            setTimeout(() => {
+                this.loadingScreen.classList.add('hidden');
+            }, 500);
+        }
     }
 
     /**
      * Show error message
      */
     showError(message) {
-        this.loadingScreen.innerHTML = `
-            <div style="color: #e74c3c; text-align: center; padding: 20px;">
-                <h2>Error</h2>
-                <p>${message}</p>
-            </div>
-        `;
+        if (this.loadingScreen) {
+            this.loadingScreen.innerHTML = `
+                <div style="color: #e74c3c; text-align: center; padding: 20px;">
+                    <h2>Error</h2>
+                    <p>${message}</p>
+                </div>
+            `;
+        } else {
+            console.error(message);
+        }
     }
 
     /**
@@ -170,6 +186,18 @@ class Game {
 // Entry Point
 // ============================================================================
 
+function waitForCanvas() {
+    const canvas = document.getElementById('render-canvas');
+
+    if (canvas) {
+        console.log('Canvas element found, starting game...');
+        startGame();
+    } else {
+        console.log('Waiting for canvas element...');
+        setTimeout(waitForCanvas, 100);
+    }
+}
+
 function startGame() {
     console.log('Starting Urban 3D Environment...');
     console.log('THREE available:', typeof THREE !== 'undefined');
@@ -181,12 +209,12 @@ function startGame() {
     window.game.init();
 }
 
-// Wait for DOM to be ready
+// Wait for DOM to be ready, then wait for canvas
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', startGame);
+    document.addEventListener('DOMContentLoaded', waitForCanvas);
 } else {
-    // DOM already loaded, start immediately
-    startGame();
+    // DOM already loaded, check for canvas
+    waitForCanvas();
 }
 
 // Handle page unload
