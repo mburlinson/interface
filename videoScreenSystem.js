@@ -8,8 +8,38 @@ class VideoScreenSystem {
         this.scene = scene;
         this.screens = [];
         this.playerPosition = new THREE.Vector3();
+        this.userInteracted = false;
+
+        // Enable videos on first user interaction
+        this.setupUserInteractionListener();
 
         console.log('VideoScreenSystem initialized');
+    }
+
+    /**
+     * Setup listener for user interaction to enable videos
+     */
+    setupUserInteractionListener() {
+        const enableVideos = () => {
+            if (this.userInteracted) return;
+
+            console.log('User interaction detected - enabling videos');
+            this.userInteracted = true;
+
+            // Try to play all videos
+            this.screens.forEach(screen => {
+                if (!screen.isPlaying) {
+                    this.playVideo(screen);
+                }
+            });
+
+            // Remove listeners after first interaction
+            document.removeEventListener('click', enableVideos);
+            document.removeEventListener('keydown', enableVideos);
+        };
+
+        document.addEventListener('click', enableVideos);
+        document.addEventListener('keydown', enableVideos);
     }
 
     /**
@@ -25,15 +55,15 @@ class VideoScreenSystem {
      * Create a single video screen
      */
     createScreen(data) {
-        console.log('Creating video screen:', data.id);
+        console.log('Creating video screen:', data.id, 'at position:', data.position);
 
         // Create HTML5 video element
         const video = document.createElement('video');
         video.id = data.id;
         video.src = data.videoUrl;
         video.loop = data.loop !== undefined ? data.loop : true;
-        video.muted = false;
-        video.volume = data.volume !== undefined ? data.volume : 0.5;
+        video.muted = true; // Start muted to allow autoplay
+        video.volume = 0; // Muted
         video.playsInline = true;
         video.crossOrigin = 'anonymous';
         video.preload = 'auto';
@@ -42,11 +72,13 @@ class VideoScreenSystem {
         video.style.display = 'none';
         document.body.appendChild(video);
 
+        console.log('Video element created for:', data.id, 'URL:', data.videoUrl);
+
         // Create video texture
         const videoTexture = new THREE.VideoTexture(video);
         videoTexture.minFilter = THREE.LinearFilter;
         videoTexture.magFilter = THREE.LinearFilter;
-        videoTexture.format = THREE.RGBFormat;
+        videoTexture.format = THREE.RGBAFormat;
 
         // Create screen mesh
         const geometry = new THREE.BoxGeometry(
@@ -95,14 +127,15 @@ class VideoScreenSystem {
             position: new THREE.Vector3(data.position.x, data.position.y, data.position.z),
             isPlaying: false,
             autoplay: data.autoplay !== undefined ? data.autoplay : true,
+            targetVolume: data.volume !== undefined ? data.volume : 0.5,
         };
 
         this.screens.push(screenObject);
 
-        // Autoplay if configured and browser allows
-        if (data.autoplay) {
-            this.attemptAutoplay(screenObject);
-        }
+        // Try to autoplay (muted)
+        this.attemptAutoplay(screenObject);
+
+        console.log('Screen created:', screenObject.id, 'Position:', screenObject.position, 'Trigger radius:', screenObject.triggerRadius);
 
         return screenObject;
     }
@@ -157,21 +190,23 @@ class VideoScreenSystem {
      * Attempt to autoplay video (may fail due to browser policies)
      */
     attemptAutoplay(screenObject) {
+        console.log('Attempting autoplay for:', screenObject.id);
+
+        // Start muted
+        screenObject.video.muted = true;
+        screenObject.video.volume = 0;
+
         const playPromise = screenObject.video.play();
 
         if (playPromise !== undefined) {
             playPromise
                 .then(() => {
-                    console.log(`Video ${screenObject.id} autoplaying`);
+                    console.log(`✓ Video ${screenObject.id} autoplaying (muted)`);
                     screenObject.isPlaying = true;
                 })
                 .catch(error => {
-                    console.log(`Video ${screenObject.id} autoplay blocked:`, error.message);
-                    // Browser blocked autoplay - will play on user interaction/proximity
-                    screenObject.video.muted = true; // Muted videos can usually autoplay
-                    screenObject.video.play().then(() => {
-                        screenObject.isPlaying = true;
-                    });
+                    console.warn(`✗ Video ${screenObject.id} autoplay blocked:`, error.message);
+                    console.log('Click or press any key to enable videos');
                 });
         }
     }
@@ -197,12 +232,35 @@ class VideoScreenSystem {
         // Check if player is within trigger radius
         const inRange = distance < screen.triggerRadius;
 
+        // Debug logging (only log changes)
+        if (inRange && !screen.wasInRange) {
+            console.log(`✓ Player entered range of ${screen.id} (distance: ${distance.toFixed(1)}m / ${screen.triggerRadius}m)`);
+            console.log('Player position:', this.playerPosition);
+            console.log('Screen position:', screen.position);
+        } else if (!inRange && screen.wasInRange) {
+            console.log(`Player left range of ${screen.id}`);
+        }
+
+        screen.wasInRange = inRange;
+
         if (inRange && !screen.isPlaying) {
             // Player entered range - start playback
             this.playVideo(screen);
         } else if (!inRange && screen.isPlaying && !screen.autoplay) {
             // Player left range - pause playback (if not autoplay)
             this.pauseVideo(screen);
+        }
+
+        // Gradually increase volume when in range
+        if (inRange && screen.isPlaying && this.userInteracted) {
+            const volumeTarget = screen.targetVolume;
+            if (screen.video.volume < volumeTarget) {
+                screen.video.volume = Math.min(volumeTarget, screen.video.volume + 0.01);
+                if (screen.video.muted && screen.video.volume > 0.1) {
+                    screen.video.muted = false;
+                    console.log(`Unmuting ${screen.id}`);
+                }
+            }
         }
 
         // Update texture
@@ -215,16 +273,23 @@ class VideoScreenSystem {
      * Play video
      */
     playVideo(screen) {
+        console.log(`▶ Attempting to play video: ${screen.id}`);
+
+        // Make sure it's muted first for autoplay
+        screen.video.muted = true;
+        screen.video.volume = 0;
+
         const playPromise = screen.video.play();
 
         if (playPromise !== undefined) {
             playPromise
                 .then(() => {
-                    console.log(`Playing video: ${screen.id}`);
+                    console.log(`✓ Successfully playing video: ${screen.id}`);
                     screen.isPlaying = true;
                 })
                 .catch(error => {
-                    console.warn(`Failed to play video ${screen.id}:`, error);
+                    console.error(`✗ Failed to play video ${screen.id}:`, error);
+                    console.log('Click anywhere or press any key to enable video playback');
                 });
         }
     }
@@ -235,7 +300,7 @@ class VideoScreenSystem {
     pauseVideo(screen) {
         screen.video.pause();
         screen.isPlaying = false;
-        console.log(`Paused video: ${screen.id}`);
+        console.log(`⏸ Paused video: ${screen.id}`);
     }
 
     /**
@@ -254,6 +319,7 @@ class VideoScreenSystem {
         const screen = this.screens.find(s => s.id === screenId);
         if (screen) {
             screen.video.volume = Utils.clamp(volume, 0, 1);
+            screen.targetVolume = volume;
         }
     }
 
