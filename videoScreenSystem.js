@@ -223,36 +223,16 @@ class VideoScreenSystem {
     }
 
     /**
-     * Update individual screen based on player proximity
+     * Update individual screen - ALWAYS PLAY (no proximity check)
      */
     updateScreen(screen) {
-        // Calculate distance to player (XZ plane)
-        const distance = Utils.distanceXZ(this.playerPosition, screen.position);
-
-        // Check if player is within trigger radius
-        const inRange = distance < screen.triggerRadius;
-
-        // Debug logging (only log changes)
-        if (inRange && !screen.wasInRange) {
-            console.log(`✓ Player entered range of ${screen.id} (distance: ${distance.toFixed(1)}m / ${screen.triggerRadius}m)`);
-            console.log('Player position:', this.playerPosition);
-            console.log('Screen position:', screen.position);
-        } else if (!inRange && screen.wasInRange) {
-            console.log(`Player left range of ${screen.id}`);
-        }
-
-        screen.wasInRange = inRange;
-
-        if (inRange && !screen.isPlaying) {
-            // Player entered range - start playback
+        // Just keep videos playing - no proximity check
+        if (!screen.isPlaying) {
             this.playVideo(screen);
-        } else if (!inRange && screen.isPlaying && !screen.autoplay) {
-            // Player left range - pause playback (if not autoplay)
-            this.pauseVideo(screen);
         }
 
-        // Gradually increase volume when in range
-        if (inRange && screen.isPlaying && this.userInteracted) {
+        // Gradually increase volume if user interacted
+        if (screen.isPlaying && this.userInteracted) {
             const volumeTarget = screen.targetVolume;
             if (screen.video.volume < volumeTarget) {
                 screen.video.volume = Math.min(volumeTarget, screen.video.volume + 0.01);
