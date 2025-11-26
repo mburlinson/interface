@@ -10,7 +10,7 @@ class CameraController {
 
         // Camera orbit angles
         this.azimuthAngle = 0;              // Horizontal rotation
-        this.polarAngle = Math.PI / 3;    // Vertical rotation (looking more horizontal now)
+        this.polarAngle = Math.PI / 3;      // Vertical rotation (60° - looking up more)
 
         // Camera position and target
         this.currentPosition = new THREE.Vector3();
@@ -150,7 +150,7 @@ class CameraController {
      */
     reset() {
         this.azimuthAngle = 0;
-        this.polarAngle = Math.PI / 2.5;  // More horizontal view
+        this.polarAngle = Math.PI / 3;  // Same as initial - looking up
     }
 
     /**

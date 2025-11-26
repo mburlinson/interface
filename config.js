@@ -23,7 +23,7 @@ const Config = {
         offset: { x: 0, y: 3, z: 6 },  // Offset from player (x, y, z)
         lookAtOffset: { x: 0, y: 1.5, z: 0 }, // Look at point offset
         mouseSensitivity: 0.002,     // Mouse rotation sensitivity
-        minPolarAngle: 0.5,          // Min vertical rotation (radians)
+        minPolarAngle: 0.3,          // Min vertical rotation - CHANGED to allow looking up more
         maxPolarAngle: Math.PI / 2,  // Max vertical rotation (radians)
         smoothing: 0.1,              // Camera movement smoothing
         collisionRadius: 0.3,        // Camera collision detection radius
@@ -44,7 +44,7 @@ const Config = {
             position: { x: 0, y: 5, z: -15 },
             rotation: { x: 0, y: 0, z: 0 },
             scale: { x: 8, y: 4.5, z: 0.1 },
-            videoUrl: 'https://player.vimeo.com/progressive_redirect/playback/619548035/rendition/1080p/file.mp4?loc=external&log_user=0&signature=366af475bc65444d4823867f933729b5e4132a48275cab4453142f156dedacfe',
+            videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
             loop: true,
             autoplay: true,
             volume: 0.5,
@@ -55,7 +55,7 @@ const Config = {
             position: { x: -20, y: 4, z: 0 },
             rotation: { x: 0, y: Math.PI / 2, z: 0 },
             scale: { x: 6, y: 3.4, z: 0.1 },
-            videoUrl: 'https://player.vimeo.com/progressive_redirect/playback/941972848/rendition/1080p/file.mp4?loc=external&log_user=0&signature=4d913a9cb17e21a009771136cb1d3a0e0a04f80bbb9b6f78da798d7e8258c5a8',
+            videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
             loop: true,
             autoplay: true,
             volume: 0.3,

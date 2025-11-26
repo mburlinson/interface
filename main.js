@@ -31,7 +31,15 @@ class Game {
                 throw new Error('Canvas element not found! Make sure #render-canvas exists in the HTML.');
             }
 
-            console.log('Canvas found:', this.canvas);
+            // Verify it's actually a canvas element
+            if (!(this.canvas instanceof HTMLCanvasElement)) {
+                console.error('Element found but it is not a canvas:', this.canvas);
+                throw new Error('render-canvas is not a canvas element! Found: ' + this.canvas.tagName);
+            }
+
+            console.log('Canvas found and verified:', this.canvas);
+            console.log('Canvas type:', this.canvas.tagName);
+            console.log('Canvas parent:', this.canvas.parentElement);
 
             // Create Three.js core
             this.createRenderer();
@@ -56,7 +64,7 @@ class Game {
 
         } catch (error) {
             console.error('Failed to initialize game:', error);
-            this.showError('Failed to initialize the 3D environment. Please refresh the page.');
+            this.showError('Failed to initialize the 3D environment: ' + error.message);
         }
     }
 
@@ -64,13 +72,21 @@ class Game {
      * Create WebGL renderer
      */
     createRenderer() {
+        console.log('Creating renderer with canvas:', this.canvas);
+
         this.renderer = new THREE.WebGLRenderer({
             canvas: this.canvas,
             antialias: Config.performance.antialias,
         });
 
         this.renderer.setPixelRatio(Config.performance.pixelRatio);
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
+
+        // Get container dimensions instead of window
+        const container = this.canvas.parentElement;
+        const width = container.clientWidth || window.innerWidth;
+        const height = container.clientHeight || window.innerHeight;
+
+        this.renderer.setSize(width, height);
 
         // Enable shadows
         if (Config.performance.enableShadows) {
@@ -82,7 +98,7 @@ class Game {
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
         this.renderer.toneMappingExposure = 1.0;
 
-        console.log('Renderer created');
+        console.log('Renderer created successfully');
     }
 
     /**
@@ -97,9 +113,13 @@ class Game {
      * Create camera
      */
     createCamera() {
+        const container = this.canvas.parentElement;
+        const width = container.clientWidth || window.innerWidth;
+        const height = container.clientHeight || window.innerHeight;
+
         this.camera = new THREE.PerspectiveCamera(
             Config.camera.fov,
-            window.innerWidth / window.innerHeight,
+            width / height,
             Config.camera.near,
             Config.camera.far
         );
@@ -112,14 +132,18 @@ class Game {
      * Handle window resize
      */
     onWindowResize() {
+        const container = this.canvas.parentElement;
+        const width = container.clientWidth || window.innerWidth;
+        const height = container.clientHeight || window.innerHeight;
+
         // Update camera aspect ratio
-        this.camera.aspect = window.innerWidth / window.innerHeight;
+        this.camera.aspect = width / height;
         this.camera.updateProjectionMatrix();
 
         // Update renderer size
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.renderer.setSize(width, height);
 
-        console.log('Window resized:', window.innerWidth, 'x', window.innerHeight);
+        console.log('Window resized:', width, 'x', height);
     }
 
     /**
@@ -160,6 +184,7 @@ class Game {
                 </div>
             `;
         } else {
+            alert('Error: ' + message);
             console.error(message);
         }
     }
@@ -189,9 +214,13 @@ class Game {
 function waitForCanvas() {
     const canvas = document.getElementById('render-canvas');
 
-    if (canvas) {
-        console.log('Canvas element found, starting game...');
-        startGame();
+    if (canvas && canvas instanceof HTMLCanvasElement) {
+        console.log('Valid canvas element found, starting game in 100ms...');
+        // Small delay to ensure everything is ready
+        setTimeout(startGame, 100);
+    } else if (canvas) {
+        console.error('Element with id "render-canvas" found but it is not a canvas!', canvas);
+        setTimeout(waitForCanvas, 100);
     } else {
         console.log('Waiting for canvas element...');
         setTimeout(waitForCanvas, 100);
@@ -203,6 +232,7 @@ function startGame() {
     console.log('THREE available:', typeof THREE !== 'undefined');
     console.log('Config available:', typeof Config !== 'undefined');
     console.log('Utils available:', typeof Utils !== 'undefined');
+    console.log('Document ready state:', document.readyState);
 
     // Create and initialize game
     window.game = new Game();
