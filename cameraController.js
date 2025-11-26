@@ -10,7 +10,7 @@ class CameraController {
 
         // Camera orbit angles
         this.azimuthAngle = 0;              // Horizontal rotation
-        this.polarAngle = Math.PI / 2;    // Vertical rotation (looking more horizontal now)
+        this.polarAngle = Math.PI / 3;    // Vertical rotation (looking more horizontal now)
 
         // Camera position and target
         this.currentPosition = new THREE.Vector3();
